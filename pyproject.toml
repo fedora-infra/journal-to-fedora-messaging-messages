@@ -26,7 +26,7 @@ classifiers = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8.10"
+python = "^3.9"
 fedora-messaging = "^3.3.0"
 
 [tool.poetry.group.dev.dependencies]
@@ -38,7 +38,7 @@ ruff = ">=0.0.253"
 reuse = ">=1.1.0"
 
 [tool.poetry.plugins."fedora.messages"]
-"journal_to_fedora_messaging.new" = "journal_to_fedora_messaging_messages.thing:NewThingV1"
+"journal.ipa.user_add" = "journal_to_fedora_messaging_messages.ipa:IpaUserAddV1"
 
 [tool.black]
 line-length = 100

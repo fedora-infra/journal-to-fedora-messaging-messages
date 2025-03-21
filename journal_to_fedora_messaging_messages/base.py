@@ -2,76 +2,42 @@
 #
 # SPDX-License-Identifier: LGPL-3.0-or-later
 
-from fedora_messaging import message
-
 
 SCHEMA_URL = "http://fedoraproject.org/message-schema/"
 
-THING_SCHEMA = {
+# Data is usually serialized as strings.
+# If it's huge, it can be serialized as null.
+# If it's a binary, it's serialized as an array of numbers
+# https://systemd.io/JOURNAL_EXPORT_FORMATS/#journal-json-format
+JOURNAL_VALUE = {"type": ["string", "null", "array"], "items": {"type": "number"}}
+
+# See https://www.freedesktop.org/software/systemd/man/latest/systemd.journal-fields.html
+JOURNAL_SCHEMA = {
     "type": "object",
     "properties": {
-        "id": {"type": "number"},
-        "name": {"type": "string"},
-        "foobar": {"type": ["string", "null"]},
-        "url": {"type": "string", "format": "uri"},
+        "_HOSTNAME": {"type": "string"},
+        "_CMDLINE": {"type": "string"},
+        "_COMM": {"type": "string"},
+        "ERRNO": {"type": "string"},
+        "_EXE": {"type": "string"},
+        "_PID": {"type": "string"},
+        "_UID": {"type": "string"},
+        "_GID": {"type": "string"},
+        "PRIORITY": {"type": "string"},
+        "MESSAGE": JOURNAL_VALUE,
+        "CODE_FILE": {"type": "string"},
+        "CODE_FUNC": {"type": "string"},
+        "CODE_LINE": {"type": "string"},
+        "SYSLOG_FACILITY": {"type": "string"},
+        "SYSLOG_IDENTIFIER": {"type": "string"},
+        "SYSLOG_PID": {"type": "string"},
+        "SYSLOG_TIMESTAMP": {"type": "string"},
+        "_SYSTEMD_CGROUP": {"type": "string"},
+        "_SYSTEMD_SLICE": {"type": "string"},
+        "_SYSTEMD_UNIT": {"type": "string"},
+        "_SYSTEMD_INVOCATION_ID": {"type": "string"},
+        "__REALTIME_TIMESTAMP": {"type": "string"},
+        "_SOURCE_REALTIME_TIMESTAMP": {"type": "string"},
     },
-    "required": ["id", "name"],
+    "required": ["_HOSTNAME", "_COMM", "MESSAGE", "PRIORITY", "__REALTIME_TIMESTAMP"],
 }
-
-
-class JournaltoFedoraMessagingMessage(message.Message):
-    """
-    A sub-class of a Fedora message that defines a message schema for messages
-    published by Journal to Fedora Messaging.
-    """
-
-    @property
-    def app_name(self):
-        return "Journal to Fedora Messaging"
-
-    @property
-    def app_icon(self):
-        return "https://apps.fedoraproject.org/img/icons/journal-to-fedora-messaging.png"
-
-    @property
-    def url(self):
-        try:
-            return self.body["thing"]["url"]
-        except KeyError:
-            return None
-
-    @property
-    def agent_name(self):
-        """The username of the user who initiated the action that generated this message."""
-        return self.body.get("agent")
-
-    @property
-    def usernames(self):
-        """List of users affected by the action that generated this message."""
-        return [self.agent_name]
-
-    @property
-    def groups(self):
-        """List of groups affected by the action that generated this message."""
-        group = self.body.get("group")
-        return [group] if group else []
-
-    @property
-    def packages(self):
-        """List of packages affected by the action that generated this message."""
-        return []
-
-    @property
-    def containers(self):
-        """List of containers affected by the action that generated this message."""
-        return []
-
-    @property
-    def modules(self):
-        """List of modules affected by the action that generated this message."""
-        return []
-
-    @property
-    def flatpaks(self):
-        """List of flatpaks affected by the action that generated this message."""
-        return []
