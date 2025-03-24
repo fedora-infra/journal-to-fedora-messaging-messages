@@ -42,7 +42,10 @@ class IpaMessage(message.Message):
         for field in REDACT_FIELDS:
             for expr in REDACT_EXPRS:
                 self.body[field] = expr.sub("", self.body[field])
-        self._params = json.loads(self.body["IPA_API_PARAMS"])
+
+    @property
+    def _params(self):
+        return json.loads(self.body["IPA_API_PARAMS"])
 
     @property
     def app_name(self):
@@ -94,7 +97,32 @@ class IpaUserAddV1(IpaMessage):
         return [self.user_name, self.agent_name]
 
 
-class IpaGroupAddMemberV1(IpaMessage):
+class IpaGroupMemberMessage(IpaMessage):
+    """
+    A base class that defines a message schema for messages
+    published by IPA when new users are added or removed from a group.
+    """
+
+    @property
+    def user_names(self):
+        """The users that were added or removed (list[str])."""
+        return self._params["user"]
+
+    @property
+    def group(self):
+        """The group that the users were added to or removed from."""
+        return self._params["cn"]
+
+    @property
+    def usernames(self):
+        return [self.agent_name, *self.user_names]
+
+    @property
+    def groups(self):
+        return [self.group]
+
+
+class IpaGroupAddMemberV1(IpaGroupMemberMessage):
     """
     A sub-class of a Fedora message that defines a message schema for messages
     published by IPA when new users are added to a group.
@@ -106,16 +134,6 @@ class IpaGroupAddMemberV1(IpaMessage):
         "description": "Schema for messages sent when new users are added to a group",
         **IPA_SCHEMA,
     }
-
-    @property
-    def user_names(self):
-        """The users that were added (list[str])."""
-        return self._params["user"]
-
-    @property
-    def group(self):
-        """The group that the users were added to."""
-        return self._params["cn"]
 
     def __str__(self):
         """Return a complete human-readable representation of the message."""
@@ -138,10 +156,38 @@ class IpaGroupAddMemberV1(IpaMessage):
                 f"by {self.agent_name}"
             )
 
-    @property
-    def usernames(self):
-        return [self.agent_name, *self.user_names]
+
+class IpaGroupRemoveMemberV1(IpaGroupMemberMessage):
+    """
+    A sub-class of a Fedora message that defines a message schema for messages
+    published by IPA when new users are removed from a group.
+    """
+
+    topic = "ipa.group_remove_member.v1"
+    body_schema: typing.ClassVar = {
+        "id": SCHEMA_URL + topic,
+        "description": "Schema for messages sent when new users are removed from a group",
+        **IPA_SCHEMA,
+    }
+
+    def __str__(self):
+        """Return a complete human-readable representation of the message."""
+        return (
+            f"The following users were removed from group {self.group}:"
+            f"\n- {'\n- '.join(self.user_names)}\n\n"
+            f"Removed by: {self.agent_name}\n"
+        )
 
     @property
-    def groups(self):
-        return [self.group]
+    def summary(self):
+        """Return a summary of the message."""
+        if len(self.user_names) > 1:
+            return (
+                f'The following users were removed from group "{self.group}" by {self.agent_name}: '
+                f"{', '.join(self.user_names)}"
+            )
+        else:
+            return (
+                f'User "{self.user_names[0]}" has been removed from group "{self.group}" '
+                f"by {self.agent_name}"
+            )
