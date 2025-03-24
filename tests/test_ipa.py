@@ -8,7 +8,11 @@ from itertools import chain
 
 import pytest
 
-from journal_to_fedora_messaging_messages.ipa import IpaUserAddV1
+from journal_to_fedora_messaging_messages.ipa import (
+    IpaGroupAddMemberV1,
+    IpaGroupRemoveMemberV1,
+    IpaUserAddV1,
+)
 
 
 @pytest.fixture
@@ -62,6 +66,92 @@ def ipa_message_user_add():
     }
 
 
+@pytest.fixture
+def ipa_message_group_add_user():
+    return {
+        "IPA_API_PARAMS": (
+            '{"cn": "developers", "all": false, "raw": false, "version": "2.254", '
+            '"no_members": false, "user": ["testing"]}'
+        ),
+        "__REALTIME_TIMESTAMP": "1742838354523018",
+        "_GID": "991",
+        "_UID": "992",
+        "_SYSTEMD_INVOCATION_ID": "342f3dc5aa0a425e93f88c82edaaa162",
+        "_PID": "9201",
+        "_TRANSPORT": "journal",
+        "PRIORITY": "5",
+        "MESSAGE_ID": "6d70f1b493df36478bc3499257cd3b17",
+        "_SOURCE_REALTIME_TIMESTAMP": "1742838354522995",
+        "_BOOT_ID": "24e0753793004f54b0a4cd1d1c4fbad5",
+        "_CAP_EFFECTIVE": "0",
+        "IPA_API_ACTOR": "admin@TINYSTAGE.TEST",
+        "IPA_API_COMMAND": "group_add_member",
+        "_SYSTEMD_UNIT": "httpd.service",
+        "_MACHINE_ID": "0e73a05e18f041b9a528a99f7ab13e35",
+        "_RUNTIME_SCOPE": "system",
+        "_SELINUX_CONTEXT": "system_u:system_r:httpd_t:s0",
+        "_SYSTEMD_SLICE": "system.slice",
+        "CODE_FILE": "/usr/lib/python3.12/site-packages/ipalib/frontend.py",
+        "SYSLOG_IDENTIFIER": "/mod_wsgi",
+        "_HOSTNAME": "ipa.tinystage.test",
+        "_EXE": "/usr/sbin/httpd",
+        "IPA_API_RESULT": "SUCCESS",
+        "_SYSTEMD_CGROUP": "/system.slice/httpd.service",
+        "CODE_FUNC": "__audit_to_journal",
+        "MESSAGE": (
+            "[IPA.API] admin@TINYSTAGE.TEST: group_add_member: SUCCESS [ldap2_139734790206096] "
+            '{"cn": "developers", "all": false, "raw": false, "version": "2.254", '
+            '"no_members": false, "user": ["testing"]}'
+        ),
+        "_CMDLINE": '"(wsgi:ipa)     " -DFOREGROUND',
+        "CODE_LINE": "495",
+        "_COMM": "httpd",
+    }
+
+
+@pytest.fixture
+def ipa_message_group_remove_user():
+    return {
+        "_SOURCE_REALTIME_TIMESTAMP": "1742839089995853",
+        "_CMDLINE": '"(wsgi:ipa)     " -DFOREGROUND',
+        "PRIORITY": "5",
+        "SYSLOG_IDENTIFIER": "/mod_wsgi",
+        "_PID": "9202",
+        "CODE_LINE": "495",
+        "_HOSTNAME": "ipa.tinystage.test",
+        "_MACHINE_ID": "0e73a05e18f041b9a528a99f7ab13e35",
+        "IPA_API_PARAMS": (
+            '{"cn": "developers", "all": false, "raw": false, "version": "2.254", '
+            '"no_members": false, "user": ["testing"]}'
+        ),
+        "_TRANSPORT": "journal",
+        "CODE_FUNC": "__audit_to_journal",
+        "_SELINUX_CONTEXT": "system_u:system_r:httpd_t:s0",
+        "_COMM": "httpd",
+        "MESSAGE": (
+            "[IPA.API] admin@TINYSTAGE.TEST: group_remove_member: SUCCESS [ldap2_139734790190384] "
+            '{"cn": "developers", "all": false, "raw": false, "version": "2.254", '
+            '"no_members": false, "user": ["testing"]}'
+        ),
+        "_CAP_EFFECTIVE": "0",
+        "MESSAGE_ID": "6d70f1b493df36478bc3499257cd3b17",
+        "IPA_API_COMMAND": "group_remove_member",
+        "_UID": "992",
+        "__REALTIME_TIMESTAMP": "1742839089995893",
+        "_SYSTEMD_INVOCATION_ID": "342f3dc5aa0a425e93f88c82edaaa162",
+        "IPA_API_RESULT": "SUCCESS",
+        "CODE_FILE": "/usr/lib/python3.12/site-packages/ipalib/frontend.py",
+        "_SYSTEMD_UNIT": "httpd.service",
+        "_EXE": "/usr/sbin/httpd",
+        "_SYSTEMD_SLICE": "system.slice",
+        "_BOOT_ID": "24e0753793004f54b0a4cd1d1c4fbad5",
+        "IPA_API_ACTOR": "admin@TINYSTAGE.TEST",
+        "_RUNTIME_SCOPE": "system",
+        "_GID": "991",
+        "_SYSTEMD_CGROUP": "/system.slice/httpd.service",
+    }
+
+
 def test_user_add(ipa_message_user_add):
     """
     Assert the message schema validates a message with the required fields.
@@ -72,11 +162,84 @@ def test_user_add(ipa_message_user_add):
     assert message.app_icon == "https://apps.fedoraproject.org/img/icons/ipa.png"
     assert message.url is None
     assert message.agent_name == "noggin"
-    assert message.username == "dummy"
+    assert message.user_name == "dummy"
     assert message.result == "SUCCESS"
+    assert message.usernames == ["dummy", "noggin"]
     assert message.summary == 'noggin created user "dummy"'
     assert str(message) == "A new user has been created: dummy\nBy: noggin\n"
 
     # Some data must be redacted
     for values in chain(message.body.values(), message._params):
         assert "dummy@example.com" not in values
+
+
+def test_group_add_member(ipa_message_group_add_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    message = IpaGroupAddMemberV1(body=ipa_message_group_add_user)
+    message.validate()
+    assert message.agent_name == "admin"
+    assert message.user_names == ["testing"]
+    assert message.result == "SUCCESS"
+    assert message.usernames == ["admin", "testing"]
+    assert message.summary == 'User "testing" has been added to group "developers" by admin'
+    assert str(message) == "Group developers has new users:\n- testing\n\nAdded by: admin\n"
+
+
+def test_group_add_member_multiple(ipa_message_group_add_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    ipa_message_group_add_user["IPA_API_PARAMS"] = (
+        '{"cn": "developers", "all": false, "raw": false, "version": "2.254", "no_members": false, '
+        '"user": ["testing1", "testing2"]}'
+    )
+    message = IpaGroupAddMemberV1(body=ipa_message_group_add_user)
+    message.validate()
+    assert message.user_names == ["testing1", "testing2"]
+    assert message.usernames == ["admin", "testing1", "testing2"]
+    assert message.summary == (
+        'The following users were added to group "developers" by admin: testing1, testing2'
+    )
+    assert (
+        str(message)
+        == "Group developers has new users:\n- testing1\n- testing2\n\nAdded by: admin\n"
+    )
+
+
+def test_group_remove_member(ipa_message_group_remove_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    message = IpaGroupRemoveMemberV1(body=ipa_message_group_remove_user)
+    message.validate()
+    assert message.agent_name == "admin"
+    assert message.user_names == ["testing"]
+    assert message.result == "SUCCESS"
+    assert message.summary == 'User "testing" has been removed from group "developers" by admin'
+    assert str(message) == (
+        "The following users were removed from group developers:\n- testing\n\n"
+        "Removed by: admin\n"
+    )
+
+
+def test_group_remove_member_multiple(ipa_message_group_remove_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    ipa_message_group_remove_user["IPA_API_PARAMS"] = (
+        '{"cn": "developers", "all": false, "raw": false, "version": "2.254", "no_members": false, '
+        '"user": ["testing1", "testing2"]}'
+    )
+    message = IpaGroupRemoveMemberV1(body=ipa_message_group_remove_user)
+    message.validate()
+    assert message.user_names == ["testing1", "testing2"]
+    assert message.usernames == ["admin", "testing1", "testing2"]
+    assert message.summary == (
+        'The following users were removed from group "developers" by admin: testing1, testing2'
+    )
+    assert str(message) == (
+        "The following users were removed from group developers:\n- testing1\n- testing2\n\n"
+        "Removed by: admin\n"
+    )

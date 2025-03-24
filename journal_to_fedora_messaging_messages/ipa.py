@@ -137,9 +137,9 @@ class IpaGroupAddMemberV1(IpaGroupMemberMessage):
 
     def __str__(self):
         """Return a complete human-readable representation of the message."""
+        user_list = "\n- ".join(self.user_names)
         return (
-            f"Group {self.group} has new users:\n- {'\n- '.join(self.user_names)}\n\n"
-            f"Added by: {self.agent_name}\n"
+            f"Group {self.group} has new users:\n- {user_list}\n\n" f"Added by: {self.agent_name}\n"
         )
 
     @property
@@ -172,9 +172,10 @@ class IpaGroupRemoveMemberV1(IpaGroupMemberMessage):
 
     def __str__(self):
         """Return a complete human-readable representation of the message."""
+        user_list = "\n- ".join(self.user_names)
         return (
             f"The following users were removed from group {self.group}:"
-            f"\n- {'\n- '.join(self.user_names)}\n\n"
+            f"\n- {user_list}\n\n"
             f"Removed by: {self.agent_name}\n"
         )
 
