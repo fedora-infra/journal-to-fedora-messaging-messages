@@ -76,15 +76,72 @@ class IpaUserAddV1(IpaMessage):
     }
 
     @property
-    def username(self):
-        """The username that was created."""
+    def user_name(self):
+        """The user that was created."""
         return self._params["uid"]
 
     def __str__(self):
         """Return a complete human-readable representation of the message."""
-        return f"A new user has been created: {self.username}\nBy: {self.agent_name}\n"
+        return f"A new user has been created: {self.user_name}\nBy: {self.agent_name}\n"
 
     @property
     def summary(self):
         """Return a summary of the message."""
-        return f'{self.agent_name} created user "{self.username}"'
+        return f'{self.agent_name} created user "{self.user_name}"'
+
+    @property
+    def usernames(self):
+        return [self.user_name, self.agent_name]
+
+
+class IpaGroupAddMemberV1(IpaMessage):
+    """
+    A sub-class of a Fedora message that defines a message schema for messages
+    published by IPA when new users are added to a group.
+    """
+
+    topic = "ipa.group_add_member.v1"
+    body_schema: typing.ClassVar = {
+        "id": SCHEMA_URL + topic,
+        "description": "Schema for messages sent when new users are added to a group",
+        **IPA_SCHEMA,
+    }
+
+    @property
+    def user_names(self):
+        """The users that were added (list[str])."""
+        return self._params["user"]
+
+    @property
+    def group(self):
+        """The group that the users were added to."""
+        return self._params["cn"]
+
+    def __str__(self):
+        """Return a complete human-readable representation of the message."""
+        return (
+            f"Group {self.group} has new users:\n- {'\n- '.join(self.user_names)}\n\n"
+            f"Added by: {self.agent_name}\n"
+        )
+
+    @property
+    def summary(self):
+        """Return a summary of the message."""
+        if len(self.user_names) > 1:
+            return (
+                f'The following users were added to group "{self.group}" by {self.agent_name}: '
+                f"{', '.join(self.user_names)}"
+            )
+        else:
+            return (
+                f'User "{self.user_names[0]}" has been added to group "{self.group}" '
+                f"by {self.agent_name}"
+            )
+
+    @property
+    def usernames(self):
+        return [self.agent_name, *self.user_names]
+
+    @property
+    def groups(self):
+        return [self.group]
