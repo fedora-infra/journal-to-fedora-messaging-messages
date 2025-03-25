@@ -24,6 +24,10 @@ classifiers = [
     "Topic :: Communications",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
+include = [
+    { path = "tox.ini", format = "sdist" },
+    { path = "tests", format = "sdist" },
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
