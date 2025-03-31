@@ -7,6 +7,7 @@
 from itertools import chain
 
 import pytest
+from fedora_messaging.message import DEBUG
 
 from journal_to_fedora_messaging_messages.ipa import (
     IpaGroupAddMemberV1,
@@ -167,6 +168,7 @@ def test_user_add(ipa_message_user_add):
     assert message.usernames == ["dummy", "noggin"]
     assert message.summary == 'noggin created user "dummy"'
     assert str(message) == "A new user has been created: dummy\nBy: noggin\n"
+    assert message.severity == DEBUG
 
     # Some data must be redacted
     for values in chain(message.body.values(), message._params):
@@ -185,6 +187,7 @@ def test_group_add_member(ipa_message_group_add_user):
     assert message.usernames == ["admin", "testing"]
     assert message.summary == 'User "testing" has been added to group "developers" by admin'
     assert str(message) == "Group developers has new users:\n- testing\n\nAdded by: admin\n"
+    assert message.severity == DEBUG
 
 
 def test_group_add_member_multiple(ipa_message_group_add_user):
@@ -222,6 +225,7 @@ def test_group_remove_member(ipa_message_group_remove_user):
         "The following users were removed from group developers:\n- testing\n\n"
         "Removed by: admin\n"
     )
+    assert message.severity == DEBUG
 
 
 def test_group_remove_member_multiple(ipa_message_group_remove_user):

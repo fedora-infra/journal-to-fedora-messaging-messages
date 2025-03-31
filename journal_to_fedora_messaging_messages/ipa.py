@@ -71,6 +71,9 @@ class IpaUserAddV1(IpaMessage):
     published by IPA when a new user is created.
     """
 
+    # Don't notify in FMN: Noggin already sends a message on this action
+    severity = message.DEBUG
+
     topic = "ipa.user_add.v1"
     body_schema: typing.ClassVar = {
         "id": SCHEMA_URL + topic,
@@ -102,6 +105,9 @@ class IpaGroupMemberMessage(IpaMessage):
     A base class that defines a message schema for messages
     published by IPA when new users are added or removed from a group.
     """
+
+    # Don't notify in FMN: Noggin already sends a message on these actions
+    severity = message.DEBUG
 
     @property
     def user_names(self):
