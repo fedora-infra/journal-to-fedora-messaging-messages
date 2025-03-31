@@ -3,19 +3,21 @@
 %global pkgname journal-to-fedora-messaging-messages
 %global srcname journal_to_fedora_messaging_messages
 
-Name:           python-%{srcname}
+Name:           python-%{pkgname}
 Version:        1.0.0
 Release:        %autorelease
 Summary:        A schema package for messages sent by Journal to Fedora Messaging
 
 License:        LGPL-3.0-or-later
 URL:            http://github.com/fedora-infra/journal-to-fedora-messaging-messages
-Source:         %{pypi_source %{pkgname}}
+Source:         %{pypi_source %{srcname}}
 
 BuildArch:      noarch
 BuildRequires:  python3-devel
 BuildRequires:  python3-pytest
 BuildRequires:  python3-pytest-cov
+# For the RPM macro pyproject_buildrequires.py
+BuildRequires:  python3-poetry-core
 
 %global _description %{expand:
 A schema package for messages sent by Journal to Fedora Messaging.}
