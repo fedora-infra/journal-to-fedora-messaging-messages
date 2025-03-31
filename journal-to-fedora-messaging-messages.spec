@@ -4,7 +4,7 @@
 %global srcname journal_to_fedora_messaging_messages
 
 Name:           python-%{pkgname}
-Version:        1.0.0
+Version:        1.0.1
 Release:        %autorelease
 Summary:        A schema package for messages sent by Journal to Fedora Messaging
 
