@@ -16,6 +16,7 @@ BuildArch:      noarch
 BuildRequires:  python3-devel
 BuildRequires:  python3-pytest
 BuildRequires:  python3-pytest-cov
+BuildRequires:  systemd-rpm-macros
 # For the RPM macro pyproject_buildrequires.py
 BuildRequires:  python3-poetry-core
 
@@ -49,6 +50,10 @@ Summary:        %{summary}
 
 %check
 %pytest tests
+
+
+%postun
+%systemd_postun_with_restart journal-to-fedora-messaging.service
 
 
 %files -n python3-%{pkgname} -f %{pyproject_files}
