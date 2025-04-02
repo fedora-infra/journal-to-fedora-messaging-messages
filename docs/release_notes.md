@@ -2,9 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## Version 1.0.2
 
-This project uses [*towncrier*](https://towncrier.readthedocs.io/) and the changes for the upcoming release can be found in [the `changelog.d` directory](http://github.com/fedora-infra/journal-to-fedora-messaging/tree/develop/changelog.d/).
+- Fix a packit script ([c17c5b7](https://github.com/fedora-infra/journal-to-fedora-messaging-messages/commit/c17c5b7))
+- Add documentation ([dc9d49f](https://github.com/fedora-infra/journal-to-fedora-messaging-messages/commit/dc9d49f))
+- RPM: restart journal-to-fedora-messaging on upgrade ([6ffc95c](https://github.com/fedora-infra/journal-to-fedora-messaging-messages/commit/6ffc95c))
 
 
 ## Version 1.0.1
