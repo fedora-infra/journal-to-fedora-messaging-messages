@@ -4,7 +4,7 @@ SPDX-PackageSupplier = "Fedora Infrastructure <admin@fedoraproject.org>"
 SPDX-PackageDownloadLocation = "http://github.com/fedora-infra/journal-to-fedora-messaging-messages"
 
 [[annotations]]
-path = ["**.yaml", "**.md", "**.toml", "*.spec", ".gitignore", "**.ini", ".github/**"]
+path = ["**.yaml", "**.md", "**.toml", "*.spec", ".gitignore", "**.ini", ".github/**", "docs/**"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2025 Contributors to the Fedora Project"
 SPDX-License-Identifier = "LGPL-3.0-or-later"

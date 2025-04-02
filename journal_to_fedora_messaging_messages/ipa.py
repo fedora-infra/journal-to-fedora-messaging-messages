@@ -57,11 +57,12 @@ class IpaMessage(message.Message):
 
     @property
     def agent_name(self):
-        """The username of the user who initiated the action that generated this message."""
+        """str: The username of the user who initiated the action that generated this message."""
         return self.body["IPA_API_ACTOR"].partition("@")[0]
 
     @property
     def result(self):
+        """str: The status code of the action."""
         return self.body["IPA_API_RESULT"]
 
 
@@ -83,7 +84,7 @@ class IpaUserAddV1(IpaMessage):
 
     @property
     def user_name(self):
-        """The user that was created."""
+        """str: The user that was created."""
         return self._params["uid"]
 
     def __str__(self):
@@ -92,7 +93,7 @@ class IpaUserAddV1(IpaMessage):
 
     @property
     def summary(self):
-        """Return a summary of the message."""
+        """str: Return a summary of the message."""
         return f'{self.agent_name} created user "{self.user_name}"'
 
     @property
@@ -111,12 +112,12 @@ class IpaGroupMemberMessage(IpaMessage):
 
     @property
     def user_names(self):
-        """The users that were added or removed (list[str])."""
+        """list[str]: The users that were added or removed."""
         return self._params["user"]
 
     @property
     def group(self):
-        """The group that the users were added to or removed from."""
+        """str: The group that the users were added to or removed from."""
         return self._params["cn"]
 
     @property
@@ -142,7 +143,7 @@ class IpaGroupAddMemberV1(IpaGroupMemberMessage):
     }
 
     def __str__(self):
-        """Return a complete human-readable representation of the message."""
+        """A complete human-readable representation of the message."""
         user_list = "\n- ".join(self.user_names)
         return (
             f"Group {self.group} has new users:\n- {user_list}\n\n" f"Added by: {self.agent_name}\n"
@@ -150,7 +151,7 @@ class IpaGroupAddMemberV1(IpaGroupMemberMessage):
 
     @property
     def summary(self):
-        """Return a summary of the message."""
+        """str: A summary of the message."""
         if len(self.user_names) > 1:
             return (
                 f'The following users were added to group "{self.group}" by {self.agent_name}: '
@@ -187,7 +188,7 @@ class IpaGroupRemoveMemberV1(IpaGroupMemberMessage):
 
     @property
     def summary(self):
-        """Return a summary of the message."""
+        """str: A summary of the message."""
         if len(self.user_names) > 1:
             return (
                 f'The following users were removed from group "{self.group}" by {self.agent_name}: '
