@@ -185,8 +185,8 @@ def test_group_add_member(ipa_message_group_add_user):
     assert message.user_names == ["testing"]
     assert message.result == "SUCCESS"
     assert message.usernames == ["admin", "testing"]
-    assert message.summary == 'User "testing" has been added to group "developers" by admin'
-    assert str(message) == "Group developers has new users:\n- testing\n\nAdded by: admin\n"
+    assert message.summary == 'User admin has added user testing to group "developers"'
+    assert str(message) == "Group developers has a new user:\n- testing\n\nAdded by: admin\n"
     assert message.severity == DEBUG
 
 
@@ -203,15 +203,60 @@ def test_group_add_member_multiple(ipa_message_group_add_user):
     assert message.user_names == ["testing1", "testing2"]
     assert message.usernames == ["admin", "testing1", "testing2"]
     assert message.summary == (
-        'The following users were added to group "developers" by admin: testing1, testing2'
+        'User admin has added users testing1, testing2 to group "developers"'
     )
-    assert (
-        str(message)
-        == "Group developers has new users:\n- testing1\n- testing2\n\nAdded by: admin\n"
+    assert str(message) == (
+        "Group developers has new users:\n- testing1\n- testing2\n\nAdded by: admin\n"
     )
 
 
-def test_group_remove_member(ipa_message_group_remove_user):
+def test_group_add_member_group_no_user(ipa_message_group_add_user):
+    # Example: https://apps.fedoraproject.org/datagrepper/v2/id?id=d2c5f9c4-0ec4-473d-a2fd-de95bbaa01cb&size=extra-large
+    ipa_message_group_add_user["IPA_API_PARAMS"] = (
+        '{"cn": "gitlab-centos-sig-nfv", "all": true, "raw": false, "version": "2.254", '
+        '"no_members": false, "group": ["sig-nfv"]}'
+    )
+    message = IpaGroupAddMemberV1(body=ipa_message_group_add_user)
+    message.validate()
+    assert message.user_names == []
+    assert message.group_names == ["sig-nfv"]
+    assert message.usernames == ["admin"]
+    assert message.groups == ["gitlab-centos-sig-nfv", "sig-nfv"]
+    assert message.summary == (
+        'User admin has added group sig-nfv to group "gitlab-centos-sig-nfv"'
+    )
+    assert str(message) == (
+        "Group gitlab-centos-sig-nfv has a new group:\n- sig-nfv\n\nAdded by: admin\n"
+    )
+
+
+def test_group_add_member_user_and_group(ipa_message_group_add_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    ipa_message_group_add_user["IPA_API_PARAMS"] = (
+        '{"cn": "developers", "all": false, "raw": false, "version": "2.254", "no_members": false, '
+        '"user": ["testing-user"], "group": ["testing-group"]}'
+    )
+    message = IpaGroupAddMemberV1(body=ipa_message_group_add_user)
+    message.validate()
+    assert message.user_names == ["testing-user"]
+    assert message.group_names == ["testing-group"]
+    assert message.usernames == ["admin", "testing-user"]
+    assert message.groups == ["developers", "testing-group"]
+    assert message.summary == (
+        'User admin has added user testing-user and group testing-group to group "developers"'
+    )
+    assert str(message) == (
+        "Group developers has a new user:\n"
+        "- testing-user\n"
+        "Group developers has a new group:\n"
+        "- testing-group\n"
+        "\nAdded by: admin\n"
+    )
+
+
+def test_group_remove_user(ipa_message_group_remove_user):
     """
     Assert the message schema validates a message with the required fields.
     """
@@ -220,15 +265,14 @@ def test_group_remove_member(ipa_message_group_remove_user):
     assert message.agent_name == "admin"
     assert message.user_names == ["testing"]
     assert message.result == "SUCCESS"
-    assert message.summary == 'User "testing" has been removed from group "developers" by admin'
+    assert message.summary == 'User admin has removed user testing from group "developers"'
     assert str(message) == (
-        "The following users were removed from group developers:\n- testing\n\n"
-        "Removed by: admin\n"
+        "The following user was removed from group developers:\n- testing\n\nRemoved by: admin\n"
     )
     assert message.severity == DEBUG
 
 
-def test_group_remove_member_multiple(ipa_message_group_remove_user):
+def test_group_remove_user_multiple(ipa_message_group_remove_user):
     """
     Assert the message schema validates a message with the required fields.
     """
@@ -241,9 +285,80 @@ def test_group_remove_member_multiple(ipa_message_group_remove_user):
     assert message.user_names == ["testing1", "testing2"]
     assert message.usernames == ["admin", "testing1", "testing2"]
     assert message.summary == (
-        'The following users were removed from group "developers" by admin: testing1, testing2'
+        'User admin has removed users testing1, testing2 from group "developers"'
     )
     assert str(message) == (
         "The following users were removed from group developers:\n- testing1\n- testing2\n\n"
         "Removed by: admin\n"
+    )
+
+
+def test_group_remove_group(ipa_message_group_remove_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    ipa_message_group_remove_user["IPA_API_PARAMS"] = (
+        '{"cn": "developers", "all": false, "raw": false, "version": "2.254", "no_members": false, '
+        '"group": ["testing"]}'
+    )
+    message = IpaGroupRemoveMemberV1(body=ipa_message_group_remove_user)
+    message.validate()
+    assert message.agent_name == "admin"
+    assert message.group_names == ["testing"]
+    assert message.user_names == []
+    assert message.groups == ["developers", "testing"]
+    assert message.result == "SUCCESS"
+    assert message.summary == 'User admin has removed group testing from group "developers"'
+    assert str(message) == (
+        "The following group was removed from group developers:\n- testing\n\nRemoved by: admin\n"
+    )
+    assert message.severity == DEBUG
+
+
+def test_group_remove_group_multiple(ipa_message_group_remove_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    ipa_message_group_remove_user["IPA_API_PARAMS"] = (
+        '{"cn": "developers", "all": false, "raw": false, "version": "2.254", "no_members": false, '
+        '"group": ["testing1", "testing2"]}'
+    )
+    message = IpaGroupRemoveMemberV1(body=ipa_message_group_remove_user)
+    message.validate()
+    assert message.group_names == ["testing1", "testing2"]
+    assert message.user_names == []
+    assert message.usernames == ["admin"]
+    assert message.groups == ["developers", "testing1", "testing2"]
+    assert message.summary == (
+        'User admin has removed groups testing1, testing2 from group "developers"'
+    )
+    assert str(message) == (
+        "The following groups were removed from group developers:\n- testing1\n- testing2\n\n"
+        "Removed by: admin\n"
+    )
+
+
+def test_group_remove_member_user_and_group(ipa_message_group_remove_user):
+    """
+    Assert the message schema validates a message with the required fields.
+    """
+    ipa_message_group_remove_user["IPA_API_PARAMS"] = (
+        '{"cn": "developers", "all": false, "raw": false, "version": "2.254", "no_members": false, '
+        '"user": ["testing-user"], "group": ["testing-group"]}'
+    )
+    message = IpaGroupRemoveMemberV1(body=ipa_message_group_remove_user)
+    message.validate()
+    assert message.user_names == ["testing-user"]
+    assert message.group_names == ["testing-group"]
+    assert message.usernames == ["admin", "testing-user"]
+    assert message.groups == ["developers", "testing-group"]
+    assert message.summary == (
+        'User admin has removed user testing-user and group testing-group from group "developers"'
+    )
+    assert str(message) == (
+        "The following user was removed from group developers:\n"
+        "- testing-user\n"
+        "The following group was removed from group developers:\n"
+        "- testing-group\n"
+        "\nRemoved by: admin\n"
     )

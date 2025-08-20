@@ -103,8 +103,8 @@ class IpaUserAddV1(IpaMessage):
 
 class IpaGroupMemberMessage(IpaMessage):
     """
-    A base class that defines a message schema for messages
-    published by IPA when new users are added or removed from a group.
+    A base class that defines a message schema for messages published by IPA when new users
+    and/or new groups are added or removed from a group.
     """
 
     # Don't notify in FMN: Noggin already sends a message on these actions
@@ -113,7 +113,12 @@ class IpaGroupMemberMessage(IpaMessage):
     @property
     def user_names(self):
         """list[str]: The users that were added or removed."""
-        return self._params["user"]
+        return self._params.get("user", [])
+
+    @property
+    def group_names(self):
+        """list[str]: The groups that were added or removed."""
+        return self._params.get("group", [])
 
     @property
     def group(self):
@@ -126,7 +131,7 @@ class IpaGroupMemberMessage(IpaMessage):
 
     @property
     def groups(self):
-        return [self.group]
+        return [self.group, *self.group_names]
 
 
 class IpaGroupAddMemberV1(IpaGroupMemberMessage):
@@ -144,30 +149,52 @@ class IpaGroupAddMemberV1(IpaGroupMemberMessage):
 
     def __str__(self):
         """A complete human-readable representation of the message."""
-        user_list = "\n- ".join(self.user_names)
-        return (
-            f"Group {self.group} has new users:\n- {user_list}\n\n" f"Added by: {self.agent_name}\n"
-        )
+        lines = []
+        if self.user_names:
+            lines.append(self._collection_text(self.user_names, "user"))
+        if self.group_names:
+            lines.append(self._collection_text(self.group_names, "group"))
+        lines.append(f"\nAdded by: {self.agent_name}\n")
+        return "\n".join(lines)
 
     @property
     def summary(self):
         """str: A summary of the message."""
-        if len(self.user_names) > 1:
-            return (
-                f'The following users were added to group "{self.group}" by {self.agent_name}: '
-                f"{', '.join(self.user_names)}"
-            )
+        words = ["User", self.agent_name, "has added"]
+        if self.user_names:
+            words.append(self._collection_summary(self.user_names, "user"))
+            if self.group_names:
+                words.append("and")
+        if self.group_names:
+            words.append(self._collection_summary(self.group_names, "group"))
+        words.extend(["to group", f'"{self.group}"'])
+        return " ".join(words)
+
+    def _collection_summary(self, collection, name):
+        words = []
+        if len(collection) == 1:
+            words.append(name)
         else:
-            return (
-                f'User "{self.user_names[0]}" has been added to group "{self.group}" '
-                f"by {self.agent_name}"
-            )
+            words.append(f"{name}s")
+        words.append(", ".join(collection))
+        return " ".join(words)
+
+    def _collection_text(self, collection, name):
+        lines = []
+        lines.append(f"Group {self.group} has ")
+        if len(collection) == 1:
+            lines[-1] += f"a new {name}:"
+        else:
+            lines[-1] += f"new {name}s:"
+        for entry in collection:
+            lines.append(f"- {entry}")
+        return "\n".join(lines)
 
 
 class IpaGroupRemoveMemberV1(IpaGroupMemberMessage):
     """
     A sub-class of a Fedora message that defines a message schema for messages
-    published by IPA when new users are removed from a group.
+    published by IPA when users and/or groups are removed from a group.
     """
 
     topic = "ipa.group_remove_member.v1"
@@ -179,23 +206,42 @@ class IpaGroupRemoveMemberV1(IpaGroupMemberMessage):
 
     def __str__(self):
         """Return a complete human-readable representation of the message."""
-        user_list = "\n- ".join(self.user_names)
-        return (
-            f"The following users were removed from group {self.group}:"
-            f"\n- {user_list}\n\n"
-            f"Removed by: {self.agent_name}\n"
-        )
+        lines = []
+        if self.user_names:
+            lines.append(self._collection_text(self.user_names, "user"))
+        if self.group_names:
+            lines.append(self._collection_text(self.group_names, "group"))
+        lines.append(f"\nRemoved by: {self.agent_name}\n")
+        return "\n".join(lines)
 
     @property
     def summary(self):
         """str: A summary of the message."""
-        if len(self.user_names) > 1:
-            return (
-                f'The following users were removed from group "{self.group}" by {self.agent_name}: '
-                f"{', '.join(self.user_names)}"
-            )
+        words = ["User", self.agent_name, "has removed"]
+        if self.user_names:
+            words.append(self._collection_summary(self.user_names, "user"))
+            if self.group_names:
+                words.append("and")
+        if self.group_names:
+            words.append(self._collection_summary(self.group_names, "group"))
+        words.extend(["from group", f'"{self.group}"'])
+        return " ".join(words)
+
+    def _collection_summary(self, collection, name):
+        words = []
+        if len(collection) == 1:
+            words.append(name)
         else:
-            return (
-                f'User "{self.user_names[0]}" has been removed from group "{self.group}" '
-                f"by {self.agent_name}"
-            )
+            words.append(f"{name}s")
+        words.append(", ".join(collection))
+        return " ".join(words)
+
+    def _collection_text(self, collection, name):
+        lines = []
+        if len(collection) == 1:
+            lines.append(f"The following {name} was removed from group {self.group}:")
+        else:
+            lines.append(f"The following {name}s were removed from group {self.group}:")
+        for entry in collection:
+            lines.append(f"- {entry}")
+        return "\n".join(lines)
