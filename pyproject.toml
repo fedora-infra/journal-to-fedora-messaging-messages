@@ -4,7 +4,7 @@
 
 [tool.poetry]
 name = "journal-to-fedora-messaging-messages"
-version = "1.0.2"
+version = "1.0.3"
 description = "A schema package for messages sent by Journal to Fedora Messaging"
 authors = ["Fedora Infrastructure Team <infrastructure@lists.fedoraproject.org>"]
 license = "LGPL-3.0-or-later"
