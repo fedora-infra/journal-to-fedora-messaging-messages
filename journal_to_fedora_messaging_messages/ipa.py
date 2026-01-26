@@ -10,7 +10,6 @@ from fedora_messaging import message
 
 from .base import JOURNAL_SCHEMA, SCHEMA_URL
 
-
 IPA_JOURNAL_FIELDS = (
     "IPA_API_ACTOR",
     "IPA_API_COMMAND",
